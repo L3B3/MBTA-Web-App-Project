@@ -1,7 +1,7 @@
 import os
 import json
+import pprint
 import urllib.request
-
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -10,7 +10,8 @@ load_dotenv()
 # Get API keys from environment variables
 MAPBOX_TOKEN = os.getenv("MAPBOX_TOKEN")
 MBTA_API_KEY = os.getenv("MBTA_API_KEY")
-
+print(MAPBOX_TOKEN)
+print(MBTA_API_KEY)
 # Optional: helpful error messages if keys are missing
 if MAPBOX_TOKEN is None:
     raise RuntimeError("MAPBOX_TOKEN is not set. Check your .env file.")
@@ -29,7 +30,12 @@ def get_json(url: str) -> dict:
 
     Both get_lat_lng() and get_nearest_station() might need to use this function.
     """
-    pass
+    with urllib.request.urlopen(url) as resp:
+        response_text= resp.read().decode("utf-8")
+        response_data= json.loads(response_text)
+        pprint.pprint(response_data)
+        print(response_data["features"][0]["properties"]["address"])
+    return response_data
 
 
 def get_lat_lng(place_name: str) -> tuple[str, str]:
@@ -38,6 +44,7 @@ def get_lat_lng(place_name: str) -> tuple[str, str]:
 
     See https://docs.mapbox.com/api/search/search-box/#search-request for Mapbox Search API URL formatting requirements.
     """
+
     pass
 
 
