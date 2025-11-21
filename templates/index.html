@@ -1,20 +1,40 @@
-<!doctype html>
-<html>
-  <head>
-    <title>MBTA Finder</title>
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MBTA Stop Finder</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-  </head>
-  <body>
-    <h1>Find the nearest MBTA stop</h1>
+</head>
+<body>
 
-    {% if error %}
-      <p style="color: red;">{{ error }}</p>
-    {% endif %}
+    <!-- Top image -->
+    <div class="top-image-container">
+        <img src="{{ url_for('static', filename='images/MBTA Station.jpeg') }}"
+             alt="Header Image"
+             class="top-image">
+    </div>
 
-    <form action="{{ url_for('index') }}" method="post">
-      <label for="place">Enter a location:</label>
-      <input type="text" id="place" name="place" required>
-      <button type="submit">Search</button>
-    </form>
-  </body>
+    <!-- Main form box -->
+    <div class="container">
+        <div class="form-box">
+            <h1>MBTA Stop Finder</h1>
+
+            {% if error %}
+                <p class="error-msg">{{ error }}</p>
+            {% endif %}
+
+            <form action="{{ url_for('index') }}" method="post">
+                <label for="place">Enter a Location</label>
+                <input type="text"
+                       id="place"
+                       name="place"
+                       placeholder="e.g. Harvard Square, Cambridge"
+                       required>
+                <button type="submit">Find Nearest Stop</button>
+            </form>
+        </div>
+    </div>
+
+</body>
 </html>

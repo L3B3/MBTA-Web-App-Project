@@ -1,19 +1,61 @@
-<!doctype html>
-<html>
-  <head>
-    <title>Nearest MBTA Stop</title>
-  </head>
-  <body>
-    {% if error %}
-      <p style="color: red;">{{ error }}</p>
-    {% else %}
-      <h1>Nearest MBTA Stop</h1>
-      <p>Station name: {{ stop.station_name }}</p>
-      <p>Wheelchair accessible:
-        {% if stop.wheelchair_accessible %}Yes{% else %}No{% endif %}
-      </p>
+<!-- templates/result.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MBTA Stop Result</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+
+    <!-- Top image -->
+    <div class="top-image-container">
+        <img src="{{ url_for('static', filename='images/MBTA Station.jpeg') }}"
+             alt="Header Image"
+             class="top-image">
+    </div>
+
+    <!-- Station info box -->
+    <div class="container">
+        <div class="form-box">
+            {% if error %}
+                <h1>MBTA Stop Finder</h1>
+                <p class="error-msg">{{ error }}</p>
+                <a href="{{ url_for('index') }}"><button>Search Again</button></a>
+            {% else %}
+                <h1>Nearest MBTA Stop</h1>
+                <p><strong>Location:</strong> {{ place }}</p>
+                <p><strong>Station Name:</strong> {{ stop.station_name }}</p>
+                <p><strong>Wheelchair Accessible:</strong>
+                    {% if stop.wheelchair_accessible %} Yes {% else %} No {% endif %}
+                </p>
+
+                <a href="{{ url_for('index') }}"><button>Search Again</button></a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Separate restaurant grid section -->
+    {% if restaurants %}
+    <div class="restaurant-section">
+        <h2>Top Nearby Restaurants</h2>
+
+        <div class="restaurant-grid">
+            {% for r in restaurants %}
+                <div class="restaurant-card">
+                    <h3>{{ r.name }}</h3>
+                    <p>{{ r.address }}</p>
+                    {% if r.rating %}
+                        <p>Rating: {{ r.rating }} / 5</p>
+                    {% endif %}
+                    {% if r.phone %}
+                        <p>Phone: {{ r.phone }}</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
     {% endif %}
 
-    <a href="{{ url_for('index') }}">Search again</a>
-  </body>
+</body>
 </html>

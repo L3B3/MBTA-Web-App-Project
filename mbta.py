@@ -1,32 +1,41 @@
-# Data Loading and Environment Variable Setup
+# mbta.py
+"""This file is set up to contain the core MBTA / Mapbox / SerpAPI logic.
+You can run this file directly to do manual testing of the functions and confirm they work."""
+# ========= CORE MBTA / MAPBOX / SERPAPI LOGIC =========
+
 import os
 import json
-import pprint
-import urllib.request
 import requests
 from dotenv import load_dotenv
-# Load environment variables
+
+# ----- Environment & API Setup -----
 load_dotenv()
-# Get API keys from environment variables
+
 MAPBOX_TOKEN = os.getenv("MAPBOX_TOKEN")
 MBTA_API_KEY = os.getenv("MBTA_API_KEY")
+SERPAPI_KEY = os.getenv("SERPAPI_KEY")
+
 if MAPBOX_TOKEN is None:
     raise RuntimeError("MAPBOX_TOKEN is not set. Check your .env file.")
 if MBTA_API_KEY is None:
     raise RuntimeError("MBTA_API_KEY is not set. Check your .env file.")
-# Useful base URLs
+if SERPAPI_KEY is None:
+    raise RuntimeError("SERPAPI_KEY is not set. Check your .env file.")
+
 MAPBOX_URL = "https://api.mapbox.com/search/searchbox/v1/forward"
 MBTA_BASE_URL = "https://api-v3.mbta.com/"
 MBTA_STOPS_URL = MBTA_BASE_URL + "stops"
 
 
+# ----- Geocoding (Mapbox) -----
 def Lati_Long(input_str: str) -> tuple[float, float]:
     """
-    Given a place name/address, use Mapbox to return (latitude, longitude).
+    Given a place name or address, return (latitude, longitude)
+    using the Mapbox Search API.
     """
     params = {
         "q": input_str,
-        "access_token": MAPBOX_TOKEN
+        "access_token": MAPBOX_TOKEN,
     }
     response = requests.get(MAPBOX_URL, params=params)
     response.raise_for_status()
@@ -34,7 +43,6 @@ def Lati_Long(input_str: str) -> tuple[float, float]:
 
     features = location_data.get("features", [])
     if not features:
-        # No result from Mapbox for this query
         raise ValueError(f"No coordinates found for location '{input_str}'")
 
     # Mapbox coordinates are [longitude, latitude]
@@ -42,30 +50,28 @@ def Lati_Long(input_str: str) -> tuple[float, float]:
     longitude = coords[0]
     latitude = coords[1]
 
-    # ✅ Return ONLY (lat, lon), not the response object
     return latitude, longitude
 
+
+# ----- MBTA Stop Lookup -----
 def find_stop_near(latitude: float, longitude: float):
     """
     Given latitude and longitude, query the MBTA API for the nearest stop.
-    Returns a dict with station_name and wheelchair_accessible, or None if no stop found.
+    Returns a dict with station_name and wheelchair_accessible,
+    or None if no stop is found.
     """
     params = {
         "api_key": MBTA_API_KEY,
         "filter[latitude]": latitude,
         "filter[longitude]": longitude,
-        "sort": "distance"
+        "sort": "distance",
     }
 
     response = requests.get(MBTA_STOPS_URL, params=params)
     response.raise_for_status()
     station_data = response.json()
-    print("MBTA API response:")
-    pprint.pprint(station_data)
 
     data = station_data.get("data", [])
-
-    # ✅ Handle the case where MBTA returns no nearby stops
     if not data:
         return None
 
@@ -78,15 +84,64 @@ def find_stop_near(latitude: float, longitude: float):
         "wheelchair_accessible": wheelchair_accessible,
     }
 
+
 def get_stop_near_place(place: str):
     """
-    Convenience function: take a place string,
-    convert to coordinates, then call find_stop_near.
+    Convenience function:
+    - Convert a place string to coordinates
+    - Look up the nearest MBTA stop
+    Returns (stop_info, latitude, longitude).
     """
     latitude, longitude = Lati_Long(place)
     stop = find_stop_near(latitude, longitude)
-    return stop
+    return stop, latitude, longitude
 
+
+# ----- Nearby Restaurants (SerpAPI / Google Maps) -----
+def get_nearby_restaurants(
+    latitude: float,
+    longitude: float,
+    query: str = "restaurants",
+    limit: int = 9,
+):
+    """
+    Use SerpAPI's Google Maps engine to find nearby restaurants.
+    Returns a list of up to `limit` restaurant dicts with:
+    - name
+    - rating
+    - address
+    - phone
+    """
+    params = {
+        "engine": "google_maps",
+        "type": "search",
+        "q": query,
+        "ll": f"@{latitude},{longitude},14z",
+        "api_key": SERPAPI_KEY,
+        "hl": "en",
+        "google_domain": "google.com",
+    }
+
+    response = requests.get("https://serpapi.com/search", params=params)
+    response.raise_for_status()
+    data = response.json()
+
+    if "error" in data:
+        raise RuntimeError(f"SerpAPI error: {data['error']}")
+
+    restaurants = []
+    for r in data.get("local_results", []):
+        restaurants.append(
+            {
+                "name": r.get("title"),
+                "rating": r.get("rating"),
+                "address": r.get("address"),
+                "phone": r.get("phone"),
+            }
+        )
+
+    return restaurants[:limit]
+# ----- Main block for manual testing -----
 if __name__ == "__main__":
     print("\n *** Get Current Location ***\n")
 
