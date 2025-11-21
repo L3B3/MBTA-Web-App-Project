@@ -1,19 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
   <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MBTA Station Finder</title>
-    <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet" /> 
+    <title>MBTA Finder</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   </head>
-
   <body>
-    <h1>Get Nearest Station</h1>
-    <form action ="/Location">
-      <input type="text" name="Location" id="Location"
-      placeholder="Enter your Current Location" /> 
-      <button type="submit">Submit</button>
+    <h1>Find the nearest MBTA stop</h1>
+
+    {% if error %}
+      <p style="color: red;">{{ error }}</p>
+    {% endif %}
+
+    <form action="{{ url_for('index') }}" method="post">
+      <label for="place">Enter a location:</label>
+      <input type="text" id="place" name="place" required>
+      <button type="submit">Search</button>
     </form>
   </body>
 </html>

@@ -1,39 +1,54 @@
-from flask import Flask
-from mbta import find_stop_near, get_stop_near_place, Lati_Long
+from flask import Flask, render_template, request
+from mbta import get_stop_near_place  # you don't actually need find_stop_near or Lati_Long here
+
 app = Flask(__name__)
 
+
 @app.route("/")
-def welcome():
-    return 'Hey there, lovely to see you and welcome to the "Best" MBTA Web App!'
+@app.route("/index", methods=["GET", "POST"])
+def index():
+    if request.method == "POST":
+        place = request.form.get("place", "").strip()
 
-@app.route("/where-are-you")
-def where_are_you():
-    place = request.args.get("place")  # e.g. /where-are-you?place=Boston
+        if not place:
+            # User submitted empty form
+            return render_template("index.html",
+                                   error="Please enter a location.")
 
-    if not place:
-        return "Please provide a location with ?place=Your+Location", 400
+        # Call your helper from mbta.py
+        stop_info = get_stop_near_place(place)
 
-    latitude, longitude = Lati_Long(place)
+        if stop_info is None:
+            # No station found – show a friendly message instead of 500
+            return render_template(
+                "result.html",
+                error=f"No MBTA station found near '{place}'. Try another location.",
+            )
 
-    return f"Your location '{place}' has coordinates: ({latitude}, {longitude})"
+        # Success: show the result page
+        return render_template("result.html", stop=stop_info, place=place)
 
-@app.route("/mbta-stop-near-me")
-def mbta_stop_near_me():
-    place = request.args.get("place")  # e.g. /mbta-stop-near-me?place=Boston
+    # GET request: just render the main form
+    return render_template("index.html")
 
-    if not place:
-        return "Please provide a location with ?place=Your+Location", 400
 
-    # Get latitude/longitude from Mapbox
-    latitude, longitude = Lati_Long(place)
+# If you really want a separate /mbta route, you *can* keep this,
+# but then make sure you also have a mbta_form.html template.
+@app.route("/mbta", methods=["GET", "POST"])
+def mbta():
+    if request.method == "POST":
+        place = request.form.get("place", "").strip()
+        stop_info = get_stop_near_place(place)
+        if stop_info is None:
+            return render_template(
+                "result.html",
+                error=f"No MBTA station found near '{place}'. Try another location.",
+            )
+        return render_template("result.html", stop=stop_info, place=place)
 
-    # Use those coordinates to find the closest stop
-    station_name, wheelchair_accessible = find_stop_near(latitude, longitude)
+    # GET – render a dedicated form for /mbta, if you want it separated
+    return render_template("mbta_form.html")
 
-    return (
-        f"The nearest MBTA stop to '{place}' is {station_name}. "
-        f"Wheelchair accessible: {wheelchair_accessible}"
-    )
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Nearest MBTA Stop</title>
+  </head>
+  <body>
+    {% if error %}
+      <p style="color: red;">{{ error }}</p>
+    {% else %}
+      <h1>Nearest MBTA Stop</h1>
+      <p>Station name: {{ stop.station_name }}</p>
+      <p>Wheelchair accessible:
+        {% if stop.wheelchair_accessible %}Yes{% else %}No{% endif %}
+      </p>
+    {% endif %}
+
+    <a href="{{ url_for('index') }}">Search again</a>
+  </body>
+</html>
